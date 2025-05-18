@@ -13,12 +13,14 @@ const { use } = eval(
 const telegram = await use('telegram');
 const input = await use('readline-sync');
 const fs = await use('fs');
+const dotenv = await use('dotenv');
+dotenv.config();
 
 const { TelegramClient } = telegram;
 const { StringSession } = telegram.sessions;
 
-const apiId = input.question('Enter your Telegram API ID: ');
-const apiHash = input.question('Enter your Telegram API Hash: ');
+const apiId = process.env.TELEGRAM_API_ID || input.question('Enter your Telegram API ID: ');
+const apiHash = process.env.TELEGRAM_API_HASH || input.question('Enter your Telegram API Hash: ');
 const stringSession = new StringSession(''); // Empty string for new session
 
 async function main() {
