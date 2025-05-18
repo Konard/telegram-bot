@@ -54,7 +54,7 @@ Scripts to work with telegram
 ## Example Output
 
 ```
-**@Hodlmeforever** [2025-05-17 21:54:04]:
+**@user** [2025-05-17 21:54:04]:
 Доброй ночи
 
 **@drakonard** [2025-05-18 01:31:49]:
