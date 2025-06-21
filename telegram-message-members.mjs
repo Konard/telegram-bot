@@ -124,13 +124,10 @@ try {
         continue;
       }
       const doc = getRandomDoc();
-      const inputDoc = new Api.InputDocument({
+      const media = new Api.InputMediaDocument({
         id: doc.id,
         accessHash: doc.accessHash,
         fileReference: doc.fileReference,
-      });
-      const media = new Api.InputMediaDocument({
-        document: inputDoc,
         ttlSeconds: 0,
       });
       const randomId = BigInt(Date.now() * 1000 + Math.floor(Math.random() * 1000));
@@ -152,6 +149,8 @@ try {
       }
     } catch (err) {
       console.error(`Failed to send to ${user.id}:`, err);
+      await client.disconnect();
+      process.exit(1);
     }
   }
 
