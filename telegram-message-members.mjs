@@ -102,10 +102,6 @@ try {
 
   // Send a random sticker to each participant
   for (const user of participants) {
-    if (maxGreetings > 0 && sentCount >= maxGreetings) {
-      console.log('Reached max greetings limit.');
-      break;
-    }
     try {
       const peer = await client.getEntity(user.id);
       // Check last message in private chat
@@ -145,9 +141,15 @@ try {
         message: '',
       }));
       console.log(`Sent to ${user.username || user.id}`);
-      // Delay to avoid flooding
-      await new Promise(res => setTimeout(res, 1000));
+      // Pause for 30 seconds to avoid flooding
+      console.log('Sleeping for 30 seconds before next greeting...');
+      await new Promise(res => setTimeout(res, 30000));
       sentCount++;
+      // Stop if max greetings reached
+      if (maxGreetings > 0 && sentCount >= maxGreetings) {
+        console.log('Reached max greetings limit.');
+        break;
+      }
     } catch (err) {
       console.error(`Failed to send to ${user.id}:`, err);
     }
