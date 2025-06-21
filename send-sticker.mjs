@@ -62,12 +62,23 @@ if (!docs.length) {
 
 // Pick a random sticker and send it
 const doc = docs[Math.floor(Math.random() * docs.length)];
-const media = new Api.InputMediaDocument({
-  id: doc.id,
-  accessHash: doc.accessHash,
-  fileReference: doc.fileReference,
-  ttlSeconds: 0,
-});
+// Some Document objects nest the real fields under `doc.document`
+const docRaw = doc.document ? doc.document : doc;
+// Unwrap Integer-like types to BigInt
+const idRaw = docRaw.id;
+const accessHashRaw = docRaw.accessHash;
+const fileReference = docRaw.fileReference;
+const id = typeof idRaw === 'object' && 'value' in idRaw ? idRaw.value : idRaw;
+const accessHash = typeof accessHashRaw === 'object' && 'value' in accessHashRaw ? accessHashRaw.value : accessHashRaw;
+if (id === undefined || accessHash === undefined || fileReference === undefined) {
+  console.error('Failed to extract id/accessHash/fileReference from doc:', doc);
+  process.exit(1);
+}
+
+// Wrap the sticker into the InputDocument type for sending
+const inputDoc = new Api.InputDocument({ id, accessHash, fileReference });
+// Create the media payload with InputDocument as 'id'
+const media = new Api.InputMediaDocument({ id: inputDoc, ttlSeconds: 0 });
 const randomId = BigInt(Date.now() * 1000 + Math.floor(Math.random() * 1000));
 
 await client.invoke(new Api.messages.SendMedia({
@@ -79,4 +90,4 @@ await client.invoke(new Api.messages.SendMedia({
 console.log('Sticker sent!');
 
 await client.disconnect();
-process.exit(0); 
+process.exit(0);
