@@ -19,9 +19,7 @@ const { StringSession } = telegram.sessions;
 
 const apiId = process.env.TELEGRAM_API_ID || input.question('Enter your Telegram API ID: ');
 const apiHash = process.env.TELEGRAM_API_HASH || input.question('Enter your Telegram API Hash: ');
-const stringSessionInput = process.env.TELEGRAM_STRING_SESSION || input.question('Enter your Telegram string session (leave blank to create new): ');
-
-const stringSession = new StringSession(stringSessionInput);
+const stringSession = new StringSession('');
 const client = new TelegramClient(stringSession, parseInt(apiId), apiHash, { connectionRetries: 5 });
 
 await client.start({
@@ -31,9 +29,6 @@ await client.start({
   onError: err => console.error(err),
 });
 console.log('Connected.');
-
-// Ensure we have a saved string session for next time
-console.log('Your StringSession is:', client.session.save());
 
 // Define target chat
 const chatUsername = '@The_Jacque_Fresco';
