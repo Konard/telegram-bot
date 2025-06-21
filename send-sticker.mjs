@@ -42,17 +42,21 @@ if (!sets.length) {
   process.exit(1);
 }
 
-// Fetch all stickers from found sets
+// Fetch all stickers from found sets, with set metadata
 const docs = [];
-for (const set of sets) {
+for (const setCover of sets) {
+  const setName = setCover.set.shortName;
+  const setTitle = setCover.set.title;
   try {
     const detail = await client.invoke(new Api.messages.GetStickerSet({
-      stickerset: new Api.InputStickerSetShortName({ shortName: set.set.shortName }),
+      stickerset: new Api.InputStickerSetShortName({ shortName: setName }),
       hash: 0,
     }));
-    docs.push(...detail.documents);
+    for (const docItem of detail.documents) {
+      docs.push({ doc: docItem, setName, setTitle });
+    }
   } catch (err) {
-    console.error(`Failed to fetch sticker set ${set.set.shortName}:`, err);
+    console.error(`Failed to fetch sticker set ${setName}:`, err);
   }
 }
 if (!docs.length) {
@@ -60,8 +64,23 @@ if (!docs.length) {
   process.exit(1);
 }
 
-// Pick a random sticker and send it
-const doc = docs[Math.floor(Math.random() * docs.length)];
+// Filter for hi/hello stickers based on set metadata or alt text
+const filtered = docs.filter(({ doc, setName, setTitle }) => {
+  // match on set name or title
+  if (/hi|hello/i.test(setName + ' ' + setTitle)) return true;
+  // inspect the sticker's alt text
+  const attributes = doc.document ? doc.document.attributes : doc.attributes;
+  const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
+  if (!stickerAttr?.alt) return false;
+  return /hi|hello|👋/i.test(stickerAttr.alt);
+});
+if (!filtered.length) {
+  console.error('No hi/hello stickers found after filtering.');
+  process.exit(1);
+}
+
+// Pick a random hi/hello sticker and send it
+const { doc } = filtered[Math.floor(Math.random() * filtered.length)];
 // Some Document objects nest the real fields under `doc.document`
 const docRaw = doc.document ? doc.document : doc;
 // Unwrap Integer-like types to BigInt
