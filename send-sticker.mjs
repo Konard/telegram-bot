@@ -14,6 +14,16 @@ const input = await use('readline-sync');
 const dotenv = await use('dotenv');
 dotenv.config();
 
+// Exit immediately on any unhandled rejections or uncaught exceptions
+process.on('unhandledRejection', err => {
+  console.error('Unhandled Rejection:', err);
+  process.exit(1);
+});
+process.on('uncaughtException', err => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
 const { TelegramClient, Api } = telegram;
 const { StringSession } = telegram.sessions;
 
@@ -57,6 +67,7 @@ for (const setCover of sets) {
     }
   } catch (err) {
     console.error(`Failed to fetch sticker set ${setName}:`, err);
+    process.exit(1);
   }
 }
 if (!docs.length) {
@@ -79,8 +90,20 @@ if (!filtered.length) {
   process.exit(1);
 }
 
+// DEBUG: inspect filtered candidates
+console.log(`Total docs: ${docs.length}. Filtered candidates: ${filtered.length}`);
+console.log('Filtered candidates:');
+filtered.forEach(({ doc, setName, setTitle }, idx) => {
+  const attributes = doc.document ? doc.document.attributes : doc.attributes;
+  const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
+  const alt = stickerAttr?.alt || '';
+  console.log(`${idx}: setName="${setName}", setTitle="${setTitle}", alt="${alt}"`);
+});
+
 // Pick a random hi/hello sticker and send it
-const { doc } = filtered[Math.floor(Math.random() * filtered.length)];
+const index = Math.floor(Math.random() * filtered.length);
+console.log(`Selecting sticker #${index}`);
+const { doc } = filtered[index];
 // Some Document objects nest the real fields under `doc.document`
 const docRaw = doc.document ? doc.document : doc;
 // Unwrap Integer-like types to BigInt
