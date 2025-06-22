@@ -27,10 +27,15 @@ process.on('uncaughtException', err => {
 const { TelegramClient, Api } = telegram;
 const { StringSession } = telegram.sessions;
 
+// Read API credentials
 const apiId = process.env.TELEGRAM_API_ID || input.question('Enter your Telegram API ID: ');
 const apiHash = process.env.TELEGRAM_API_HASH || input.question('Enter your Telegram API Hash: ');
-const stringSession = new StringSession('');
-const client = new TelegramClient(stringSession, parseInt(apiId), apiHash, { connectionRetries: 5 });
+// Use existing session if provided, else start with empty
+const storedSession = process.env.TELEGRAM_STRING_SESSION;
+const stringSession = new StringSession(storedSession || '');
+const client = new TelegramClient(stringSession, parseInt(apiId, 10), apiHash, { connectionRetries: 5 });
+// Flag whether this is a new session
+const isNewSession = !storedSession;
 
 await client.start({
   phoneNumber: async () => process.env.TELEGRAM_PHONE || input.question('Enter your phone number: '),
@@ -39,6 +44,11 @@ await client.start({
   onError: err => console.error(err),
 });
 console.log('Connected.');
+
+if (isNewSession) {
+  console.log('Your new StringSession is:', client.session.save());
+  console.log('Set that as TELEGRAM_STRING_SESSION for next runs');
+}
 
 // Define target chat
 const chatUsername = '@The_Jacque_Fresco';
