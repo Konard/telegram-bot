@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'fs';
 
 // send-sticker.mjs
 //
@@ -30,12 +31,21 @@ const { StringSession } = telegram.sessions;
 // Read API credentials
 const apiId = process.env.TELEGRAM_API_ID || input.question('Enter your Telegram API ID: ');
 const apiHash = process.env.TELEGRAM_API_HASH || input.question('Enter your Telegram API Hash: ');
-// Use existing session if provided, else start with empty
-const storedSession = process.env.TELEGRAM_STRING_SESSION;
-const stringSession = new StringSession(storedSession || '');
+
+// Load or create session from file
+const sessionFile = './.telegram_session';
+const fileExists = fs.existsSync(sessionFile);
+let storedSession = '';
+if (fileExists) {
+  try {
+    storedSession = (await fs.promises.readFile(sessionFile, 'utf8')).trim();
+  } catch (err) {
+    console.error('Error reading session file:', err);
+    process.exit(1);
+  }
+}
+const stringSession = new StringSession(storedSession);
 const client = new TelegramClient(stringSession, parseInt(apiId, 10), apiHash, { connectionRetries: 5 });
-// Flag whether this is a new session
-const isNewSession = !storedSession;
 
 await client.start({
   phoneNumber: async () => process.env.TELEGRAM_PHONE || input.question('Enter your phone number: '),
@@ -45,9 +55,15 @@ await client.start({
 });
 console.log('Connected.');
 
-if (isNewSession) {
-  console.log('Your new StringSession is:', client.session.save());
-  console.log('Set that as TELEGRAM_STRING_SESSION for next runs');
+// Save new session after first run
+if (!fileExists) {
+  try {
+    await fs.promises.writeFile(sessionFile, client.session.save(), 'utf8');
+    console.log(`Saved session to ${sessionFile}`);
+  } catch (err) {
+    console.error('Error writing session file:', err);
+    process.exit(1);
+  }
 }
 
 // Define target chat
