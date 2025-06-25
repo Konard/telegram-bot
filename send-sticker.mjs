@@ -109,7 +109,7 @@ const filtered = docs.filter(({ doc, setName, setTitle }) => {
   const attributes = doc.document ? doc.document.attributes : doc.attributes;
   const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
   if (!stickerAttr?.alt) return false;
-  return /hi|hello|👋/i.test(stickerAttr.alt);
+  return /hi|hello|👋|✋/i.test(stickerAttr.alt);
 });
 if (!filtered.length) {
   console.error('No hi/hello stickers found after filtering.');

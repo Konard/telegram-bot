@@ -136,3 +136,6 @@ dist
 .pnp.*
 
 data/
+
+# app
+.telegram_session
