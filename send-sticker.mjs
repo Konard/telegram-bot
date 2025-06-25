@@ -70,66 +70,56 @@ if (!fileExists) {
 const chatUsername = '@The_Jacque_Fresco';
 const channel = await client.getEntity(chatUsername);
 
-console.log('Searching sticker sets for "hi"...');
-const searchResult = await client.invoke(new Api.messages.SearchStickerSets({ q: 'hi', excludeFeatured: true, hash: 0 }));
-const sets = searchResult.sets;
+console.log('Fetching featured sticker sets...');
+// Load featured packs (first page)
+const featuredRes = await client.invoke(new Api.messages.GetOldFeaturedStickers({ offset: 0, limit: 100, hash: 0 }));
+const sets = featuredRes.sets ?? featuredRes.sticker_sets ?? featuredRes.stickerSets ?? [];
 if (!sets.length) {
-  console.error('No sticker sets found for "hi".');
+  console.error('No featured sticker sets found.');
   process.exit(1);
 }
-
-// Fetch all stickers from found sets, with set metadata
+// Fetch all stickers from featured packs
 const docs = [];
 for (const setCover of sets) {
-  const setName = setCover.set.shortName;
-  const setTitle = setCover.set.title;
+  const shortName = setCover.set?.shortName;
+  if (!shortName) continue;
   try {
-    const detail = await client.invoke(new Api.messages.GetStickerSet({
-      stickerset: new Api.InputStickerSetShortName({ shortName: setName }),
-      hash: 0,
-    }));
-    for (const docItem of detail.documents) {
-      docs.push({ doc: docItem, setName, setTitle });
-    }
+    const detail = await client.invoke(new Api.messages.GetStickerSet({ stickerset: new Api.InputStickerSetShortName({ shortName }), hash: 0 }));
+    detail.documents.forEach(d => docs.push(d));
   } catch (err) {
-    console.error(`Failed to fetch sticker set ${setName}:`, err);
-    process.exit(1);
+    console.error(`Failed to fetch sticker set ${shortName}:`, err);
   }
 }
 if (!docs.length) {
-  console.error('No stickers found in fetched sets.');
+  console.error('No stickers found in featured sets.');
   process.exit(1);
 }
-
-// Filter for hi/hello stickers based on set metadata or alt text
-const filtered = docs.filter(({ doc, setName, setTitle }) => {
-  // match on set name or title
-  if (/hi|hello/i.test(setName + ' ' + setTitle)) return true;
-  // inspect the sticker's alt text
+// Filter by alt text only (hi/hello words or wave emojis)
+const filtered = docs.filter(doc => {
   const attributes = doc.document ? doc.document.attributes : doc.attributes;
   const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
   if (!stickerAttr?.alt) return false;
-  return /hi|hello|👋|✋/i.test(stickerAttr.alt);
+  return /\b(hi|hello)\b/i.test(stickerAttr.alt) || /👋/.test(stickerAttr.alt);
 });
 if (!filtered.length) {
-  console.error('No hi/hello stickers found after filtering.');
+  console.error('No hi/hello stickers found in featured sets.');
   process.exit(1);
 }
 
 // DEBUG: inspect filtered candidates
 console.log(`Total docs: ${docs.length}. Filtered candidates: ${filtered.length}`);
 console.log('Filtered candidates:');
-filtered.forEach(({ doc, setName, setTitle }, idx) => {
+filtered.forEach((doc, idx) => {
   const attributes = doc.document ? doc.document.attributes : doc.attributes;
   const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
   const alt = stickerAttr?.alt || '';
-  console.log(`${idx}: setName="${setName}", setTitle="${setTitle}", alt="${alt}"`);
+  console.log(`${idx}: alt="${alt}"`);
 });
 
 // Pick a random hi/hello sticker and send it
 const index = Math.floor(Math.random() * filtered.length);
 console.log(`Selecting sticker #${index}`);
-const { doc } = filtered[index];
+const doc = filtered[index];
 // Some Document objects nest the real fields under `doc.document`
 const docRaw = doc.document ? doc.document : doc;
 // Unwrap Integer-like types to BigInt
