@@ -70,30 +70,41 @@ if (!fileExists) {
 const chatUsername = '@The_Jacque_Fresco';
 const channel = await client.getEntity(chatUsername);
 
-console.log('Fetching featured sticker sets...');
-// Load featured packs (first page)
-const featuredRes = await client.invoke(new Api.messages.GetOldFeaturedStickers({ offset: 0, limit: 100, hash: 0 }));
-const sets = featuredRes.sets ?? featuredRes.sticker_sets ?? featuredRes.stickerSets ?? [];
-if (!sets.length) {
-  console.error('No featured sticker sets found.');
-  process.exit(1);
-}
-// Fetch all stickers from featured packs
+console.log('Gathering stickers from featured and user collections...');
+// 1) Fetch all pages of featured sticker sets
 const docs = [];
-for (const setCover of sets) {
-  const shortName = setCover.set?.shortName;
-  if (!shortName) continue;
-  try {
-    const detail = await client.invoke(new Api.messages.GetStickerSet({ stickerset: new Api.InputStickerSetShortName({ shortName }), hash: 0 }));
-    detail.documents.forEach(d => docs.push(d));
-  } catch (err) {
-    console.error(`Failed to fetch sticker set ${shortName}:`, err);
+let offset = 0;
+const limit = 100;
+while (true) {
+  const res = await client.invoke(new Api.messages.GetOldFeaturedStickers({ offset, limit, hash: 0 }));
+  const featured = res.sets;
+  if (!featured.length) break;
+  for (const cover of featured) {
+    const shortName = cover.set.shortName;
+    try {
+      const detail = await client.invoke(new Api.messages.GetStickerSet({ stickerset: new Api.InputStickerSetShortName({ shortName }), hash: 0 }));
+      docs.push(...detail.documents);
+    } catch (e) {
+      console.error(`Error fetching featured set ${shortName}:`, e);
+    }
   }
+  offset += featured.length;
+  if (featured.length < limit) break;
 }
+// 2) Recent stickers
+const recent = await client.invoke(new Api.messages.GetRecentStickers({ hash: 0 }));
+docs.push(...(recent.stickers ?? []));
+// 3) Mask stickers
+const mask = await client.invoke(new Api.messages.GetMaskStickers({ hash: 0 }));
+docs.push(...(mask.stickers ?? []));
+// 4) Faved stickers
+const faved = await client.invoke(new Api.messages.GetFavedStickers({ hash: 0 }));
+docs.push(...(faved.stickers ?? []));
 if (!docs.length) {
-  console.error('No stickers found in featured sets.');
+  console.error('No stickers collected from featured or user sets.');
   process.exit(1);
 }
+
 // Filter by alt text only (hi/hello words or wave emojis)
 const filtered = docs.filter(doc => {
   const attributes = doc.document ? doc.document.attributes : doc.attributes;
