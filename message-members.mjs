@@ -63,8 +63,11 @@ try {
     }
 
 
-    // Ask for max greetings per run (0 = no limit)
-    const maxGreetingsInput = process.env.TELEGRAM_MAX_GREETINGS || input.question('Enter max greetings to send (0 for no limit): ');
+    // Determine max greetings: command-line arg overrides env and prompt (0 for no limit)
+    const maxGreetingsArg = process.argv[2];
+    const maxGreetingsInput = maxGreetingsArg !== undefined
+      ? maxGreetingsArg
+      : (process.env.TELEGRAM_MAX_GREETINGS || input.question('Enter max greetings to send (0 for no limit): '));
     let maxGreetings = parseInt(maxGreetingsInput, 10);
     if (isNaN(maxGreetings) || maxGreetings < 0) {
       maxGreetings = 0;
