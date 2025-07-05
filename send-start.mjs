@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+// send-start.mjs
+//
+// Usage:
+// 1. Just run: bun send-start.mjs
+//
 import { usingTelegram } from './utils.mjs';
 
 if (import.meta.main) {

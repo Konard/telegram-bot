@@ -4,10 +4,10 @@ import path from 'path';
 import { Buffer } from 'buffer';
 import { usingTelegram } from './utils.mjs';
 
-// send-sticker.mjs
+// send-greeting-sticker.mjs
 //
 // Usage:
-//   node send-sticker.mjs
+// 1. Just run: bun send-greeting-sticker.mjs
 //
 // This script will prompt for your API credentials (or use environment variables), connect to Telegram,
 // search for "hi" sticker sets, pick a random sticker, and send it to the public chat @The_Jacque_Fresco.

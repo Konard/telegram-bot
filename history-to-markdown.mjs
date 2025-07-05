@@ -1,4 +1,3 @@
-// telegram-history-to-markdown.mjs
 // history-to-markdown.mjs
 //
 // Usage:

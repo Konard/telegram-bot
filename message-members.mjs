@@ -4,10 +4,10 @@ import fs from 'fs';
 import path from 'path';
 import { sendGreetingSticker } from './send-greeting-sticker.mjs';
 
-// telegram-message-members.mjs
+// message-members.mjs
 //
 // Usage:
-// 1. Run: node telegram-message-members.mjs
+// 1. Run: bun message-members.mjs [maxGreetings]
 //
 // This script will prompt for your API credentials, chat username or ID, and sticker set name.
 // It will fetch all members of the chat and send each a random sticker from the set via private message.
