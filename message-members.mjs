@@ -98,9 +98,9 @@ try {
           continue;
         }
         const chatTarget = user.username ? `@${user.username}` : user.id;
-        await sendGreetingSticker({ client, Api, chatUsername: chatTarget });
+        const { index } = await sendGreetingSticker({ client, Api, chatUsername: chatTarget });
+        console.log(`Sticker #${index} sent to ${user.username || user.id}`);
 
-        console.log(`Sent to ${user.username || user.id}`);
         // Pause for 30 seconds to avoid flooding
         console.log('Sleeping for 30 seconds before next greeting...');
         await new Promise(res => setTimeout(res, 30000));

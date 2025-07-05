@@ -101,12 +101,12 @@ export async function sendGreetingSticker({ client, Api, chatUsername }) {
     const attributes = doc.document ? doc.document.attributes : doc.attributes;
     const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
     const alt = stickerAttr?.alt || '';
-    console.log(`${idx}: alt="${alt}"`);
+    // console.log(`${idx}: alt="${alt}"`);
   });
 
   // Pick a random hi/hello sticker and send it
   const index = Math.floor(Math.random() * filtered.length);
-  console.log(`Selecting sticker #${index}`);
+  // console.log(`Selecting sticker #${index}`);
   const doc = filtered[index];
   // Some Document objects nest the real fields under `doc.document`
   const docRaw = doc.document ? doc.document : doc;
@@ -133,9 +133,9 @@ export async function sendGreetingSticker({ client, Api, chatUsername }) {
     randomId: randomId,
     message: '',
   }));
-  console.log('Sticker sent!');
-
-  return res;
+  // Return the response along with the selected sticker index
+  // console.log('Sticker sent!');
+  return { res, index };
 }
 
 if (import.meta.main) {
