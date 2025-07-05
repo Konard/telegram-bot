@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
+import { usingTelegram } from './utils.mjs';
 
 // send-sticker.mjs
 //
@@ -10,67 +11,6 @@ import { Buffer } from 'buffer';
 //
 // This script will prompt for your API credentials (or use environment variables), connect to Telegram,
 // search for "hi" sticker sets, pick a random sticker, and send it to the public chat @The_Jacque_Fresco.
-
-export async function initTelegramConnection() {
-  const { use } = eval(await fetch('https://unpkg.com/use-m/use.js').then(u => u.text()));
-  const telegram = await use('telegram');
-  const input = await use('readline-sync');
-  const dotenv = await use('dotenv');
-  dotenv.config();
-
-  // Exit immediately on any unhandled rejections or uncaught exceptions
-  process.on('unhandledRejection', err => {
-    console.error('Unhandled Rejection:', err);
-    process.exit(1);
-  });
-  process.on('uncaughtException', err => {
-    console.error('Uncaught Exception:', err);
-    process.exit(1);
-  });
-
-  const { TelegramClient, Api } = telegram;
-  const { StringSession } = telegram.sessions;
-
-  // Read API credentials
-  const apiId = process.env.TELEGRAM_API_ID || input.question('Enter your Telegram API ID: ');
-  const apiHash = process.env.TELEGRAM_API_HASH || input.question('Enter your Telegram API Hash: ');
-
-  // Load or create session from file
-  const sessionFile = './.telegram_session';
-  const fileExists = fs.existsSync(sessionFile);
-  let storedSession = '';
-  if (fileExists) {
-    try {
-      storedSession = (await fs.promises.readFile(sessionFile, 'utf8')).trim();
-    } catch (err) {
-      console.error('Error reading session file:', err);
-      process.exit(1);
-    }
-  }
-  const stringSession = new StringSession(storedSession);
-  const client = new TelegramClient(stringSession, parseInt(apiId, 10), apiHash, { connectionRetries: 5 });
-
-  await client.start({
-    phoneNumber: async () => process.env.TELEGRAM_PHONE || input.question('Enter your phone number: '),
-    password: async () => input.question('Enter your 2FA password (if any): '),
-    phoneCode: async () => input.question('Enter the code you received: '),
-    onError: err => console.error(err),
-  });
-  console.log('Connected.');
-
-  // Save new session after first run
-  if (!fileExists) {
-    try {
-      await fs.promises.writeFile(sessionFile, client.session.save(), 'utf8');
-      console.log(`Saved session to ${sessionFile}`);
-    } catch (err) {
-      console.error('Error writing session file:', err);
-      process.exit(1);
-    }
-  }
-
-  return { client, Api };
-}
 
 // Define target chat
 const chatUsername = '@The_Jacque_Fresco';
@@ -199,10 +139,7 @@ export async function sendGreetingSticker({ client, Api, chatUsername }) {
 }
 
 if (import.meta.main) {
-  const { client, Api } = await initTelegramConnection();
-
-  await sendGreetingSticker({ client, Api, chatUsername });
-
-  await client.disconnect();
-  process.exit(0);
+  await usingTelegram(async ({ client, Api }) => {
+    await sendGreetingSticker({ client, Api, chatUsername });
+  });
 }
