@@ -84,6 +84,13 @@ try {
           lastMsg = m;
           break;
         }
+        // Trace last message data
+        if (lastMsg) {
+          const lastDate = lastMsg.date instanceof Date ? lastMsg.date : new Date(lastMsg.date);
+          console.log(`Last interaction with ${user.username || user.id}: "${lastMsg.message || lastMsg.text}" at ${lastDate.toISOString()}`);
+        } else {
+          console.log(`No prior interaction with ${user.username || user.id}`);
+        }
         let canGreet = false;
         if (!lastMsg) {
           canGreet = true;
