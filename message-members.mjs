@@ -22,6 +22,15 @@ try {
     }
     chat = chat.replace(/[^\w@-]/g, '');
     const channel = await client.getEntity(chat);
+    // Pre-flight check: ensure the entity is a channel, not a user
+    try {
+      await client.invoke(new Api.channels.GetParticipants({ channel, filter: new Api.ChannelParticipantsRecent(), offset: 0, limit: 1, hash: 0 }));
+    } catch (err) {
+      if (err.message.includes('InputPeerUser')) {
+        throw new Error(`Failed to fetch members: the identifier "${chat}" refers to a user, not a channel. Please provide a group or supergroup chat username or ID.`);
+      }
+      throw err;
+    }
 
     // Fetch all participants
     const participants = [];
@@ -40,6 +49,18 @@ try {
       offset += res.users.length;
     }
     console.log(`Fetched ${participants.length} participants.`);
+    // Exclude the bot itself from recipients
+    const me = await client.getMe();
+    const myId = typeof me.id === 'object' && 'value' in me.id ? me.id.value : me.id;
+    const recipients = participants.filter(user => {
+      const uid = typeof user.id === 'object' && 'value' in user.id ? user.id.value : user.id;
+      return uid !== myId;
+    });
+    console.log(`Excluding self (id=${myId}), will message ${recipients.length} participants.`);
+    if (!recipients.length) {
+      console.log('No other participants to message.');
+      return;
+    }
 
 
     // Ask for max greetings per run (0 = no limit)
@@ -51,7 +72,7 @@ try {
     let sentCount = 0;
 
     // Send a random hi/hello sticker using shared function
-    for (const user of participants) {
+    for (const user of recipients) {
       try {
         const peer = await client.getEntity(user.id);
         // Check last message in private chat
