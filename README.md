@@ -38,12 +38,20 @@ Scripts to work with telegram
 
 ## Usage
 
-1. Copy `.env.example` to `.env` and fill in your credentials and defaults.
+1. Create a `.env` file in this directory with the following variables:
+   ```dotenv
+   TELEGRAM_API_ID=your_api_id
+   TELEGRAM_API_HASH=your_api_hash
+   TELEGRAM_PHONE=+1234567890
+   TELEGRAM_CHAT_USERNAME=@your_chat_username
+   TELEGRAM_CHAT_ID=
+   TELEGRAM_MAX_GREETINGS=0
+   ```
 2. Run the script:
    ```zsh
-   node telegram-history-to-markdown.mjs
+   bun history-to-markdown.mjs
    ```
-3. If not all required values are in `.env`, the script will prompt you interactively.
+3. If any required values are missing in `.env`, the script will prompt you interactively.
 4. The chat history will be saved as `data/{chat_username}/history.md`.
 
 ## Security & Git
