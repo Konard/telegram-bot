@@ -95,8 +95,8 @@ export async function sendGreetingSticker({ client, Api, chatUsername }) {
   }
 
   // DEBUG: inspect filtered candidates
-  console.log(`Total docs: ${docs.length}. Filtered candidates: ${filtered.length}`);
-  console.log('Filtered candidates:');
+  // console.log(`Total docs: ${docs.length}. Filtered candidates: ${filtered.length}`);
+  // console.log('Filtered candidates:');
   filtered.forEach((doc, idx) => {
     const attributes = doc.document ? doc.document.attributes : doc.attributes;
     const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
