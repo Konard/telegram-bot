@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { usingTelegram, use } from './utils.mjs';
+import fs from 'fs';
+import path from 'path';
 import { sendGreetingSticker } from './send-greeting-sticker.mjs';
 
 // telegram-message-members.mjs
@@ -15,6 +17,20 @@ const input = await use('readline-sync');
 try {
   await usingTelegram(async ({ client, Api }) => {
     // Connected.
+    // Load greet cache
+    const cacheDir = path.resolve('./data');
+    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+    const cacheFile = path.join(cacheDir, 'greetCache.json');
+    let greetedCache = {};
+    if (fs.existsSync(cacheFile)) {
+      try {
+        greetedCache = JSON.parse(await fs.promises.readFile(cacheFile, 'utf8'));
+        console.log(`Loaded greet cache (${Object.keys(greetedCache).length} entries)`);
+      } catch (e) {
+        console.error('Error reading greet cache, starting fresh:', e);
+        greetedCache = {};
+      }
+    }
 
     let chat = process.env.TELEGRAM_CHAT_USERNAME || process.env.TELEGRAM_CHAT_ID;
     if (!chat) {
@@ -75,38 +91,23 @@ try {
     let sentCount = 0;
 
     // Send a random hi/hello sticker using shared function
-    for (const user of recipients) {
+    const totalRecipients = recipients.length;
+    for (let idx = 0; idx < totalRecipients; idx++) {
+      const user = recipients[idx];
       try {
-        const peer = await client.getEntity(user.id);
-        // Check last message in private chat
-        let lastMsg;
-        for await (const m of client.iterMessages(peer, { limit: 1 })) {
-          lastMsg = m;
-          break;
-        }
-        // Trace last message data
-        if (lastMsg) {
-          const lastDate = lastMsg.date instanceof Date ? lastMsg.date : new Date(lastMsg.date);
-          console.log(`Last interaction with ${user.username || user.id}: "${lastMsg.message || lastMsg.text}" at ${lastDate.toISOString()}`);
-        } else {
-          console.log(`No prior interaction with ${user.username || user.id}`);
-        }
-        let canGreet = false;
-        if (!lastMsg) {
-          canGreet = true;
-        } else {
-          const lastDate = lastMsg.date instanceof Date ? lastMsg.date : new Date(lastMsg.date);
-          if (Date.now() - lastDate.getTime() > 24 * 60 * 60 * 1000) {
-            canGreet = true;
-          }
-        }
-        if (!canGreet) {
-          console.log(`Skipping ${user.username || user.id} – recently messaged within 24h.`);
+        // Check greet cache to avoid duplicate greetings within 24h
+        const uid = typeof user.id === 'object' && 'value' in user.id ? user.id.value : user.id;
+        if (greetedCache[uid] && (Date.now() - greetedCache[uid] < 24 * 60 * 60 * 1000)) {
+          console.log(`Skipping ${user.username || uid} – greeted within last 24h`);
           continue;
         }
-        const chatTarget = user.username ? `@${user.username}` : user.id;
+        const chatTarget = user.username ? `@${user.username}` : uid;
         const { index } = await sendGreetingSticker({ client, Api, chatUsername: chatTarget });
-        console.log(`Sticker #${index} sent to ${user.username || user.id}`);
+        const displayName = user.username ? `@${user.username}` : uid;
+        console.log(`[${idx+1}/${totalRecipients}] Sticker #${index} sent to ${displayName}`);
+        // Update and persist greet cache
+        greetedCache[uid] = Date.now();
+        await fs.promises.writeFile(cacheFile, JSON.stringify(greetedCache, null, 2), 'utf8');
 
         // Pause for 30 seconds to avoid flooding
         console.log('Sleeping for 30 seconds before next greeting...');

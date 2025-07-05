@@ -27,7 +27,7 @@ export async function sendGreetingSticker({ client, Api, chatUsername }) {
 
   let docs;
   if (fs.existsSync(cacheFile)) {
-    console.log(`Loading stickers data from cache: ${cacheFile}`);
+    // console.log(`Loading stickers data from cache: ${cacheFile}`);
     try {
       docs = JSON.parse(await fs.promises.readFile(cacheFile, 'utf8'));
     } catch (e) {
