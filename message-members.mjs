@@ -65,14 +65,41 @@ try {
       offset += res.users.length;
     }
     console.log(`Fetched ${participants.length} participants.`);
-    // Exclude the bot itself from recipients
+    // Exclude the bot itself and filter for regular users only
     const me = await client.getMe();
     const myId = typeof me.id === 'object' && 'value' in me.id ? me.id.value : me.id;
     const recipients = participants.filter(user => {
       const uid = typeof user.id === 'object' && 'value' in user.id ? user.id.value : user.id;
-      return uid !== myId;
+      
+      // Skip if it's the bot itself
+      if (uid === myId) return false;
+      
+      // Skip bots (user.bot === true)
+      if (user.bot === true) return false;
+      
+      // Skip deleted accounts (user.deleted === true)
+      if (user.deleted === true) return false;
+      
+      // Skip fake accounts (user.fake === true)
+      if (user.fake === true) return false;
+      
+      // Skip scam accounts (user.scam === true)
+      if (user.scam === true) return false;
+      
+      // Skip verified accounts (usually businesses/official accounts)
+      if (user.verified === true) return false;
+      
+      // Skip premium accounts (optional - remove if you want to include them)
+      // if (user.premium === true) return false;
+      
+      // Skip users with no username (optional - remove if you want to include them)
+      // if (!user.username) return false;
+      
+      // Only include regular users (not bots, not deleted, not fake, not scam)
+      return true;
     });
-    console.log(`Excluding self (id=${myId}), will message ${recipients.length} participants.`);
+    
+    console.log(`Filtered to ${recipients.length} regular users (excluded bots, deleted, fake, scam accounts).`);
     if (!recipients.length) {
       console.log('No other participants to message.');
       return;
