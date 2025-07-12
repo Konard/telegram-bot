@@ -133,9 +133,22 @@ export async function sendGreetingSticker({ client, Api, chatUsername }) {
     randomId: randomId,
     message: '',
   }));
-  // Return the response along with the selected sticker index
+  
+  // Extract sticker information for return
+  const attributes = doc.document ? doc.document.attributes : doc.attributes;
+  const stickerAttr = attributes.find(a => a.className === 'DocumentAttributeSticker');
+  const stickerInfo = {
+    id: id,
+    accessHash: accessHash,
+    alt: stickerAttr?.alt || '',
+    stickerset: stickerAttr?.stickerset,
+    maskCoords: stickerAttr?.maskCoords,
+    originalDoc: doc
+  };
+  
+  // Return the response along with comprehensive sticker data
   // console.log('Sticker sent!');
-  return { res, index };
+  return { res, stickerInfo };
 }
 
 if (import.meta.main) {

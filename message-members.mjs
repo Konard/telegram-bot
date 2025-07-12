@@ -102,9 +102,10 @@ try {
           continue;
         }
         const chatTarget = user.username ? `@${user.username}` : uid;
-        const { index } = await sendGreetingSticker({ client, Api, chatUsername: chatTarget });
+        const { stickerInfo } = await sendGreetingSticker({ client, Api, chatUsername: chatTarget });
         const displayName = user.username ? `@${user.username}` : uid;
-        console.log(`[${idx+1}/${totalRecipients}] Sticker #${index} sent to ${displayName}`);
+        const stickerIdentifier = `${stickerInfo.id} (${stickerInfo.alt || 'no alt'})`;
+        console.log(`[${idx+1}/${totalRecipients}] Sticker "${stickerIdentifier}" sent to ${displayName}`);
         // Update and persist greet cache
         greetedCache[uid] = Date.now();
         await fs.promises.writeFile(cacheFile, JSON.stringify(greetedCache, null, 2), 'utf8');
